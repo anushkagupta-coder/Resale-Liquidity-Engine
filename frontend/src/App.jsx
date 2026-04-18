@@ -20,7 +20,7 @@ function App() {
     try {
       setLoading(true);
 
-      const res = await axios.post("https://resale-liquidity-engine.onrender.com/", {
+      const res = await axios.post("https://resale-liquidity-engine.onrender.com/predict", {
         address: form.address,
         size: Number(form.size),
         age: Number(form.age),
