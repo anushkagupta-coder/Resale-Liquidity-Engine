@@ -35,5 +35,7 @@ def predict(data: dict):
     # STEP 5: Add ML info (important for judges)
     result["model_used"] = "Linear Regression"
     result["predicted_price"] = predicted_price
+    result["lat"] = location_features["lat"]
+    result["lon"] = location_features["lon"]
 
     return result
