@@ -5,14 +5,14 @@ function Navbar() {
   const location = useLocation();
 
   return (
-    <div className="w-full fixed top-0 left-0 z-50 backdrop-blur-md bg-black/40 border-b border-white/10">
+    <div className="w-full fixed top-0 left-0 z-50 backdrop-blur-md bg-white/80 border-b border-gray-200 shadow-sm">
       
       <div className="max-w-6xl mx-auto flex justify-between items-center px-6 py-3">
 
         {/* LOGO */}
         <h1
           onClick={() => navigate("/")}
-          className="text-xl font-bold cursor-pointer bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent"
+          className="text-xl font-bold cursor-pointer text-gray-900 tracking-tight"
         >
           ResaleIQ
         </h1>
@@ -22,8 +22,10 @@ function Navbar() {
 
           <button
             onClick={() => navigate("/")}
-            className={`hover:text-blue-400 transition ${
-              location.pathname === "/" ? "text-blue-400" : ""
+            className={`transition ${
+              location.pathname === "/" 
+                ? "text-blue-600 font-semibold" 
+                : "text-gray-600 hover:text-blue-600"
             }`}
           >
             Home
@@ -31,8 +33,10 @@ function Navbar() {
 
           <button
             onClick={() => navigate("/dashboard")}
-            className={`hover:text-blue-400 transition ${
-              location.pathname === "/dashboard" ? "text-blue-400" : ""
+            className={`transition ${
+              location.pathname === "/dashboard" 
+                ? "text-blue-600 font-semibold" 
+                : "text-gray-600 hover:text-blue-600"
             }`}
           >
             Dashboard
@@ -40,12 +44,13 @@ function Navbar() {
 
         </div>
 
-        {/* CTA */}
+        {/* CTA BUTTON */}
         <button
           onClick={() => navigate("/dashboard")}
-          className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-sm hover:scale-105 transition"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium 
+          hover:bg-blue-700 transition shadow-sm"
         >
-          Analyze 🚀
+          Analyze
         </button>
 
       </div>
