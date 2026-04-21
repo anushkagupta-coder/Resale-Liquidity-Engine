@@ -1,29 +1,38 @@
-import { PieChart, Pie, Cell } from "recharts";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
-const Gauge = ({ value }) => {
-  const data = [
-    { name: "value", value: value },
-    { name: "rest", value: 100 - value }
-  ];
+// Fix default marker icon for Vite
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
 
-  const COLORS = ["#22c55e", "#1f2937"];
+const MapView = ({ lat, lon }) => {
+  if (!lat || !lon) return (
+    <div className="h-[300px] flex items-center justify-center text-slate-600 text-sm">
+      No location data
+    </div>
+  );
 
   return (
-    <PieChart width={200} height={200}>
-      <Pie
-        data={data}
-        innerRadius={60}
-        outerRadius={80}
-        startAngle={180}
-        endAngle={0}
-        dataKey="value"
-      >
-        {data.map((entry, index) => (
-          <Cell key={index} fill={COLORS[index]} />
-        ))}
-      </Pie>
-    </PieChart>
+    <MapContainer
+      center={[lat, lon]}
+      zoom={15}
+      style={{ height: "300px", width: "100%", borderRadius: "1rem" }}
+      scrollWheelZoom={false}
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <Marker position={[lat, lon]}>
+        <Popup>Asset Location</Popup>
+      </Marker>
+    </MapContainer>
   );
 };
 
-export default Gauge;
+export default MapView;

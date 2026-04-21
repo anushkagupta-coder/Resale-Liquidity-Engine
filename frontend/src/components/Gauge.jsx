@@ -1,28 +1,50 @@
-import { PieChart, Pie, Cell } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
-const Gauge = ({ value }) => {
+const Gauge = ({ value = 0 }) => {
+  const clamped = Math.max(0, Math.min(100, value));
   const data = [
-    { name: "value", value: value },
-    { name: "rest", value: 100 - value }
+    { name: "value", value: clamped },
+    { name: "rest",  value: 100 - clamped },
   ];
 
-  const COLORS = ["#22c55e", "#1f2937"];
+  // Color-code by score range
+  const fillColor =
+    clamped >= 70 ? "#10b981" :   // emerald — high liquidity
+    clamped >= 45 ? "#f59e0b" :   // amber   — medium
+                    "#f43f5e";    // rose    — low / risky
+
+  const COLORS = [fillColor, "rgba(255,255,255,0.04)"];
 
   return (
-    <PieChart width={200} height={200}>
-      <Pie
-        data={data}
-        innerRadius={60}
-        outerRadius={80}
-        startAngle={180}
-        endAngle={0}
-        dataKey="value"
-      >
-        {data.map((entry, index) => (
-          <Cell key={index} fill={COLORS[index]} />
-        ))}
-      </Pie>
-    </PieChart>
+    <div className="w-full h-[130px] relative flex items-center justify-center">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data}
+            innerRadius={42}
+            outerRadius={58}
+            startAngle={210}
+            endAngle={-30}
+            paddingAngle={0}
+            dataKey="value"
+            stroke="none"
+          >
+            {data.map((_, index) => (
+              <Cell
+                key={index}
+                fill={COLORS[index]}
+                style={{
+                  filter:
+                    index === 0
+                      ? `drop-shadow(0 0 8px ${fillColor}88)`
+                      : "none",
+                }}
+              />
+            ))}
+          </Pie>
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
   );
 };
 
