@@ -19,71 +19,103 @@ def get_location_features(address):
 
     lat = location.latitude
     lon = location.longitude
+    full_address = location.address 
+    print(f"DEBUG: Geocoded '{address}' to {lat}, {lon} ({full_address})")
 
-    # ---------------- STEP 2: GET NEARBY PLACES ----------------
+    # ---------------- STEP 2: GET NEARBY PLACES (Optimized) ----------------
     overpass_url = "http://overpass-api.de/api/interpreter"
 
+    # Using 5km radius (more reliable) and searching for nodes, ways, and relations
     query = f"""
-    [out:json];
+    [out:json][timeout:25];
     (
-      node["amenity"="school"](around:3000,{lat},{lon});
-      node["amenity"="hospital"](around:3000,{lat},{lon});
+      nwr["amenity"~"school|hospital|university|mall|bank|theatre|gym|cafe|restaurant"](around:5000,{lat},{lon});
+      nwr["leisure"~"park|garden"](around:5000,{lat},{lon});
+      nwr["public_transport"="station"](around:5000,{lat},{lon});
+      nwr["railway"="station"](around:5000,{lat},{lon});
     );
-    out;
+    out center;
     """
 
+    headers = {'User-Agent': 'ResaleIntelligenceEngine/1.0 (contact: user@example.com)'}
+    
     try:
-        response = requests.get(overpass_url, params={'data': query}, timeout=10)
-
-        # Check API status
+        print(f"DEBUG: Requesting Overpass for {lat}, {lon}...")
+        response = requests.get(overpass_url, params={'data': query}, headers=headers, timeout=20)
+        
         if response.status_code != 200:
-            print("API failed:", response.status_code)
-            return build_response(lat, lon, 0, 0)
-
-        # Check empty response
-        if not response.text.strip():
-            print("Empty API response")
-            return build_response(lat, lon, 0, 0)
-
-        # Convert to JSON
+            print(f"DEBUG: Overpass Error {response.status_code}: {response.text[:100]}")
+            return build_response(lat, lon, 0, 0, 0, 0, full_address)
+            
         data = response.json()
+        elements = data.get("elements", [])
+        print(f"DEBUG: Overpass found {len(elements)} total elements.")
+
+        # More robust counting
+        schools = 0
+        hospitals = 0
+        malls = 0
+        stations = 0
+
+        for e in elements:
+            tags = e.get("tags", {})
+            amenity = tags.get("amenity", "")
+            building = tags.get("building", "")
+            railway = tags.get("railway", "")
+
+            if amenity in ["school", "university", "college"] or building == "school":
+                schools += 1
+            if amenity in ["hospital", "clinic", "doctors"] or building == "hospital":
+                hospitals += 1
+            if amenity in ["mall", "marketplace"] or tags.get("shop") == "mall":
+                malls += 1
+            if tags.get("public_transport") == "station" or railway == "station":
+                stations += 1
+
+        print(f"DEBUG: Counts -> Schools: {schools}, Hospitals: {hospitals}, Malls: {malls}, Stations: {stations}")
+
+        return build_response(lat, lon, schools, hospitals, malls, stations, full_address)
 
     except Exception as e:
-        print("Overpass API error:", e)
-        return build_response(lat, lon, 0, 0)
-
-    # ---------------- STEP 3: COUNT PLACES ----------------
-    schools = 0
-    hospitals = 0
-
-    for element in data.get('elements', []):
-        tags = element.get('tags', {})
-        if tags.get('amenity') == 'school':
-            schools += 1
-        elif tags.get('amenity') == 'hospital':
-            hospitals += 1
-
-    return build_response(lat, lon, schools, hospitals)
+        print(f"DEBUG: Location Service Exception: {e}")
+        return build_response(lat, lon, 0, 0, 0, 0, full_address)
 
 
 # ---------------- HELPER FUNCTIONS ----------------
 
-def build_response(lat, lon, schools, hospitals):
+def build_response(lat, lon, schools, hospitals, premium, transport, address=""):
     
-    score = 50
+    # Calculate Neighborhood Tier
+    tier = "Developing"
+    multiplier = 1.0
+    
+    score = 50 + (schools * 2) + (hospitals * 3) + (premium * 5) + (transport * 10)
+    score = min(score, 100) # Cap at 100
 
-    if schools > 3:
-        score += 15
-
-    if hospitals > 2:
-        score += 15
+    if score > 85:
+        tier = "Elite/Premium"
+        multiplier = 1.6
+    elif score > 65:
+        tier = "Prime/Standard"
+        multiplier = 1.3
+    elif score > 50:
+        tier = "Developing"
+        multiplier = 1.0
+    else:
+        tier = "Remote/Rural"
+        multiplier = 0.7
 
     return {
         "lat": lat,
         "lon": lon,
+        "full_address": address,
         "schools": schools,
         "hospitals": hospitals,
-        "location_score": score
+        "premium_spots": premium,
+        "transport_hubs": transport,
+        "location_score": score,
+        "neighborhood_tier": tier,
+        "location_multiplier": multiplier
     }
 
 
@@ -93,5 +125,9 @@ def default_response():
         "lon": None,
         "schools": 0,
         "hospitals": 0,
-        "location_score": 50
-    }
+        "premium_spots": 0,
+        "transport_hubs": 0,
+        "location_score": 50,
+        "neighborhood_tier": "Developing",
+        "location_multiplier": 1.0
+    }

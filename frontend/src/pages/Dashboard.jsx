@@ -5,6 +5,7 @@ import Gauge from "../components/Gauge";
 import MapView from "../components/MapView";
 import Loader from "../components/Loader";
 import DarkVeil from "../components/effects/DarkVeil";
+import MapPicker from "../components/MapPicker";
 
 const INPUT_FIELD =
   "w-full px-4 py-3 bg-white/5 border border-white/10 text-white placeholder-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/40 transition-all text-sm";
@@ -47,10 +48,11 @@ function TagList({ tags, color }) {
 }
 
 export default function Dashboard() {
-  const [form, setForm] = useState({ address: "", size: "", age: "", type: "2BHK" });
+  const [form, setForm] = useState({ address: "", size: "", age: "", type: "1BHK" });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showMap, setShowMap] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -63,7 +65,7 @@ export default function Dashboard() {
     try {
       setLoading(true);
       setResult(null);
-      const res = await axios.post("https://resale-liquidity-engine.onrender.com/predict", {
+      const res = await axios.post("http://localhost:8000/predict", {
         address: form.address,
         size:    Number(form.size),
         age:     Number(form.age),
@@ -125,12 +127,23 @@ export default function Dashboard() {
               <div className="space-y-5">
                 <div>
                   <label className={LABEL}>Property Address</label>
-                  <input
-                    name="address"
-                    placeholder="e.g. 12 MG Road, Bangalore"
-                    onChange={handleChange}
-                    className={INPUT_FIELD}
-                  />
+                  <div className="relative group">
+                    <input
+                      name="address"
+                      value={form.address}
+                      placeholder="e.g. 12 MG Road, Bangalore"
+                      onChange={handleChange}
+                      className={INPUT_FIELD + " pr-12"}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowMap(true)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all border border-indigo-500/20"
+                      title="Pick on Map"
+                    >
+                      📍
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -163,7 +176,7 @@ export default function Dashboard() {
                     onChange={handleChange}
                     className={INPUT_FIELD + " cursor-pointer"}
                   >
-                    {["1BHK", "2BHK", "3BHK", "4BHK", "Villa", "Commercial"].map((t) => (
+                    {["1BHK", "2BHK", "3BHK", "4BHK", "5BHK", "Villa", "Penthouse", "Plot", "Shop"].map((t) => (
                       <option key={t} value={t} className="bg-slate-900">{t}</option>
                     ))}
                   </select>
@@ -240,16 +253,55 @@ export default function Dashboard() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <StatCard
                       label="Market Valuation"
-                      value={`₹${result.market_value_range?.[0]} – ₹${result.market_value_range?.[1]}`}
+                      value={`₹${result.market_value_range?.[0].toLocaleString()} – ₹${result.market_value_range?.[1].toLocaleString()}`}
                       sub="Estimated range based on live comparable pool."
                       accent="indigo"
                     />
                     <StatCard
                       label="Distress Floor"
-                      value={`₹${result.distress_value_range?.[0]} – ₹${result.distress_value_range?.[1]}`}
+                      value={`₹${result.distress_value_range?.[0].toLocaleString()} – ₹${result.distress_value_range?.[1].toLocaleString()}`}
                       sub="Liquidation floor under high-urgency scenarios."
                       accent="rose"
                     />
+                  </div>
+
+                      {/* MARKET ANALYSIS PANEL */}
+                      {result.ai_insights && (
+                        <div className="mt-6 p-5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="p-2 bg-indigo-500/20 rounded-lg">
+                              <span className="text-xl">📊</span>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-bold text-white uppercase tracking-wider">Market Analysis & Insights</h4>
+                              <p className="text-xs text-indigo-300">Live sentiment: {result.market_sentiment}</p>
+                            </div>
+                          </div>
+                          <ul className="space-y-3">
+                            {result.ai_insights.map((insight, i) => (
+                              <li key={i} className="flex gap-3 text-sm text-slate-300">
+                                <span className="text-indigo-400 font-bold">•</span>
+                                {insight}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                  {/* VALUATION DETAILS ROW */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div className="glass-panel p-4 border-l-2 border-slate-700">
+                      <p className={LABEL}>Rate per Sqft</p>
+                      <p className="text-xl font-bold text-white">₹{result.valuation_details?.rate_per_sqft.toLocaleString()}</p>
+                    </div>
+                    <div className="glass-panel p-4 border-l-2 border-slate-700">
+                      <p className={LABEL}>Neighborhood Tier</p>
+                      <p className="text-xl font-bold text-indigo-400">{result.valuation_details?.neighborhood_tier}</p>
+                    </div>
+                    <div className="glass-panel p-4 border-l-2 border-slate-700">
+                      <p className={LABEL}>Depreciation</p>
+                      <p className="text-xl font-bold text-rose-400">{result.valuation_details?.depreciation_applied}</p>
+                    </div>
                   </div>
 
                   {/* SCORE ROW */}
@@ -332,6 +384,13 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {showMap && (
+        <MapPicker 
+          onAddressSelected={(addr) => setForm({ ...form, address: addr })}
+          onClose={() => setShowMap(false)}
+        />
+      )}
     </div>
   );
 }
