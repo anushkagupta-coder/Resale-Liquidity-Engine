@@ -65,7 +65,10 @@ export default function Dashboard() {
     try {
       setLoading(true);
       setResult(null);
-      const res = await axios.post("http://localhost:8000/predict", {
+      
+      // Use environment variable for API URL or fallback to relative path (Vercel)
+      const API_BASE = import.meta.env.VITE_API_URL || "";
+      const res = await axios.post(`${API_BASE}/predict`, {
         address: form.address,
         size:    Number(form.size),
         age:     Number(form.age),

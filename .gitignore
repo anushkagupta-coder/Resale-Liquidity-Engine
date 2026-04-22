@@ -1,0 +1,9 @@
+.env
+node_modules/
+dist/
+__pycache__/
+*.pyc
+venv/
+.vscode/
+app/data/price_map.json
+app/data/real_estate_data.csv
