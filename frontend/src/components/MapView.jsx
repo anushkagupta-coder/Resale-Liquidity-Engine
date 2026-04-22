@@ -10,6 +10,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
+import { useMap } from "react-leaflet";
+
+function ChangeView({ center, zoom }) {
+  const map = useMap();
+  map.setView(center, zoom);
+  return null;
+}
+
 const MapView = ({ lat, lon }) => {
   if (!lat || !lon) return (
     <div className="h-[300px] flex items-center justify-center text-slate-600 text-sm">
@@ -24,6 +32,7 @@ const MapView = ({ lat, lon }) => {
       style={{ height: "300px", width: "100%", borderRadius: "1rem" }}
       scrollWheelZoom={false}
     >
+      <ChangeView center={[lat, lon]} zoom={15} />
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
