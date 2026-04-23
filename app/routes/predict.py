@@ -45,7 +45,13 @@ async def predict_liquidity(data: dict):
                 "depreciation_applied": "Market Adjusted"
             },
             "lat": loc['lat'],
-            "lon": loc['lon']
+            "lon": loc['lon'],
+            "amenities": {
+                "schools": loc['schools'],
+                "hospitals": loc['hospitals'],
+                "malls": loc['premium_spots'],
+                "transport": loc['transport_hubs']
+            }
         }
     else:
         # Fallback to heuristic if AI fails
@@ -53,5 +59,11 @@ async def predict_liquidity(data: dict):
         final_result['ai_insights'] = ["Analyzing historical market patterns for this location."]
         final_result['lat'] = loc['lat']
         final_result['lon'] = loc['lon']
+        final_result['amenities'] = {
+            "schools": loc['schools'],
+            "hospitals": loc['hospitals'],
+            "malls": loc['premium_spots'],
+            "transport": loc['transport_hubs']
+        }
 
     return final_result

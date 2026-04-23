@@ -335,6 +335,52 @@ export default function Dashboard() {
                         </div>
                       )}
 
+                      {/* AMENITIES ANALYSIS TABLE */}
+                      {result.amenities && (
+                        <div className="mt-6 glass-panel overflow-hidden border-indigo-500/10">
+                          <div className="px-5 py-4 border-b border-white/5 bg-white/5">
+                            <h4 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                              <span className="text-indigo-400">📍</span> Neighborhood Infrastructure
+                            </h4>
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs border-collapse">
+                              <thead>
+                                <tr className="border-b border-white/5">
+                                  <th className="px-5 py-3 font-bold text-slate-500 uppercase tracking-tighter">Amenity Type</th>
+                                  <th className="px-5 py-3 font-bold text-slate-500 uppercase tracking-tighter text-right">Detected Count</th>
+                                  <th className="px-5 py-3 font-bold text-slate-500 uppercase tracking-tighter text-right">Proximity Impact</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-white/5">
+                                {[
+                                  { label: "Educational Institutions", key: "schools", icon: "🎓", impact: "+ High" },
+                                  { label: "Healthcare Centers", key: "hospitals", icon: "🏥", impact: "+ High" },
+                                  { label: "Malls & Shopping", key: "malls", icon: "🛍️", impact: "+ Medium" },
+                                  { label: "Transport Stations", key: "transport", icon: "🚉", impact: "+ Very High" },
+                                ].map((row) => (
+                                  <tr key={row.key} className="hover:bg-white/[0.02] transition-colors">
+                                    <td className="px-5 py-4 text-slate-300 font-medium">
+                                      <span className="mr-2 opacity-70">{row.icon}</span> {row.label}
+                                    </td>
+                                    <td className="px-5 py-4 text-right">
+                                      <span className={`px-2 py-1 rounded-md font-black ${result.amenities[row.key] > 0 ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'}`}>
+                                        {result.amenities[row.key]}
+                                      </span>
+                                    </td>
+                                    <td className="px-5 py-4 text-right">
+                                      <span className={`font-bold ${row.impact.includes('High') ? 'text-emerald-400' : 'text-indigo-400'}`}>
+                                        {row.impact}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
                   {/* VALUATION DETAILS ROW */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     <div className="glass-panel p-4 border-l-2 border-slate-700">
