@@ -1,42 +1,60 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("propliq_user")) ?? null; }
-    catch { return null; }
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const signUp = useCallback(({ name, email, password }) => {
-    const users = JSON.parse(localStorage.getItem("propliq_users") ?? "[]");
-    if (users.find(u => u.email === email)) return { ok: false, error: "Email already registered." };
-    const newUser = { id: crypto.randomUUID(), name, email, password };
-    localStorage.setItem("propliq_users", JSON.stringify([...users, newUser]));
-    const session = { id: newUser.id, name: newUser.name, email: newUser.email };
-    localStorage.setItem("propliq_user", JSON.stringify(session));
-    setUser(session);
-    return { ok: true };
+  useEffect(() => {
+    // Check active sessions and sets the user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for changes on auth state (logged in, signed out, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = useCallback(({ email, password }) => {
-    const users = JSON.parse(localStorage.getItem("propliq_users") ?? "[]");
-    const found = users.find(u => u.email === email && u.password === password);
-    if (!found) return { ok: false, error: "Invalid email or password." };
-    const session = { id: found.id, name: found.name, email: found.email };
-    localStorage.setItem("propliq_user", JSON.stringify(session));
-    setUser(session);
-    return { ok: true };
+  const signUp = useCallback(async ({ name, email, password }) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+        },
+      },
+    });
+    
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data };
   }, []);
 
-  const signOut = useCallback(() => {
-    localStorage.removeItem("propliq_user");
-    setUser(null);
+  const signIn = useCallback(async ({ email, password }) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data };
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
   }, []);
 
   return (
     <AuthContext.Provider value={{ user, signIn, signUp, signOut }}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
