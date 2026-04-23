@@ -18,8 +18,7 @@ export default function SignIn() {
     if (!form.email || !form.password) { setError("Please fill in all fields."); return; }
     setLoading(true);
     setError(null);
-    await new Promise(r => setTimeout(r, 600));
-    const result = signIn({ email: form.email, password: form.password });
+    const result = await signIn({ email: form.email, password: form.password });
     setLoading(false);
     if (!result.ok) { setError(result.error); return; }
     navigate("/dashboard");

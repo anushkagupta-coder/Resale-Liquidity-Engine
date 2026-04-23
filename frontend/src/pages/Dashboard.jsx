@@ -6,6 +6,8 @@ import MapView from "../components/MapView";
 import Loader from "../components/Loader";
 import DarkVeil from "../components/effects/DarkVeil";
 import MapPicker from "../components/MapPicker";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
 
 const INPUT_FIELD =
   "w-full px-4 py-3 bg-white/5 border border-white/10 text-white placeholder-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/40 transition-all text-sm";
@@ -48,11 +50,14 @@ function TagList({ tags, color }) {
 }
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [form, setForm] = useState({ address: "", size: "", age: "", type: "1BHK" });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showMap, setShowMap] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -80,6 +85,34 @@ export default function Dashboard() {
       setError("Engine error — check the address format or try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveAnalysis = async () => {
+    if (!user || !result) return;
+    setSaving(true);
+    const { error } = await supabase.from('analyses').insert([{
+      user_id: user.id,
+      address: form.address,
+      property_size: Number(form.size),
+      property_age: Number(form.age),
+      property_type: form.type,
+      market_value_low: result.market_value_range?.[0],
+      market_value_high: result.market_value_range?.[1],
+      distress_value_low: result.distress_value_range?.[0],
+      distress_value_high: result.distress_value_range?.[1],
+      resale_index: result.resale_index,
+      time_to_sell: result.time_to_sell,
+      risk_flags: result.risk_flags,
+      key_drivers: result.key_drivers,
+      ai_insights: result.ai_insights
+    }]);
+    setSaving(false);
+    if (!error) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } else {
+      console.error("Error saving:", error);
     }
   };
 
@@ -252,6 +285,17 @@ export default function Dashboard() {
                   transition={{ duration: 0.5, ease: "easeOut" }}
                   className="space-y-6"
                 >
+                  <div className="flex justify-end">
+                    {user && (
+                      <button
+                        onClick={handleSaveAnalysis}
+                        disabled={saving || saveSuccess}
+                        className="px-4 py-2 bg-indigo-500/20 text-indigo-300 rounded-lg text-xs font-bold border border-indigo-500/30 hover:bg-indigo-500/30 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        {saving ? "Saving..." : saveSuccess ? "Saved! ✓" : "Save Analysis"}
+                      </button>
+                    )}
+                  </div>
                   {/* VALUATION CARDS */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <StatCard
