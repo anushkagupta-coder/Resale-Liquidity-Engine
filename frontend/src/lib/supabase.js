@@ -7,4 +7,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("Supabase URL and Anon Key are missing. Please add them to your .env file.");
 }
 
-export const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "")
+export const supabase = createClient(
+  supabaseUrl || "https://placeholder.supabase.co", 
+  supabaseAnonKey || "placeholder"
+)
